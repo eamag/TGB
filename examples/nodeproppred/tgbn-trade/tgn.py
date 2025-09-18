@@ -4,7 +4,7 @@ from tqdm import tqdm
 import torch
 import matplotlib.pyplot as plt
 import time
-from modules.perf import Usage
+from perf import Usage
 
 from torch_geometric.loader import TemporalDataLoader
 from torch_geometric.nn import TGNMemory

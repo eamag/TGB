@@ -4,7 +4,7 @@ import timeit
 import argparse
 import matplotlib.pyplot as plt
 import time
-from modules.perf import Usage
+from perf import Usage
 
 
 from torch_geometric.loader import TemporalDataLoader
