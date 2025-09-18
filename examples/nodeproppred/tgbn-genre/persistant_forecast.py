@@ -8,6 +8,8 @@ import numpy as np
 from torch_geometric.loader import TemporalDataLoader
 from tqdm import tqdm
 import torch
+import time
+
 
 # local imports
 from tgb.nodeproppred.dataset_pyg import PyGNodePropPredDataset
@@ -102,28 +104,32 @@ def test_n_upate(loader):
 """
 train, val and test for one epoch only
 """
-
-start_time = timeit.default_timer()
+start_time = time.perf_counter()
 metric_dict = test_n_upate(train_loader)
+end_time = time.perf_counter()
 print(metric_dict)
+latency = end_time - start_time
 print(
     "Persistant forecast on Training takes--- %s seconds ---"
-    % (timeit.default_timer() - start_time)
+    % (latency)
 )
 
-start_time = timeit.default_timer()
+start_time = time.perf_counter()
 val_dict = test_n_upate(val_loader)
+end_time = time.perf_counter()
 print(val_dict)
+latency = end_time - start_time
 print(
     "Persistant forecast on validation takes--- %s seconds ---"
-    % (timeit.default_timer() - start_time)
+    % (latency)
 )
 
 
-start_time = timeit.default_timer()
+start_time = time.perf_counter()
 test_dict = test_n_upate(test_loader)
+end_time = time.perf_counter()
 print(test_dict)
 print(
-    "Persistant forecast on Test takes--- %s seconds ---" % (timeit.default_timer() - start_time)
+    "Persistant forecast on Test takes--- %s seconds ---" % (latency)
 )
 dataset.reset_label_time()
