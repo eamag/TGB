@@ -3,6 +3,9 @@ import torch
 import timeit
 import argparse
 import matplotlib.pyplot as plt
+import time
+from modules.perf import Usage
+
 
 from torch_geometric.loader import TemporalDataLoader
 from torch_geometric.nn import TGNMemory
@@ -34,6 +37,8 @@ lr = 0.0001
 epochs = 50
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+u = Usage(gpu=device).__enter__()
+
 name = "tgbn-genre"
 dataset = PyGNodePropPredDataset(name=name, root="datasets")
 train_mask = dataset.train_mask
@@ -302,28 +307,38 @@ test_curve = []
 max_val_score = 0  #find the best test score based on validation score
 best_test_idx = 0
 for epoch in range(1, epochs + 1):
-    start_time = timeit.default_timer()
+    start_time = time.perf_counter()
     train_dict = train()
+    end_time = time.perf_counter()
+    latency = end_time - start_time
     print("------------------------------------")
     print(f"training Epoch: {epoch:02d}")
     print(train_dict)
     train_curve.append(train_dict[eval_metric])
-    print("Training takes--- %s seconds ---" % (timeit.default_timer() - start_time))
+    print("Training takes--- %s seconds ---" % (latency))
     
-    start_time = timeit.default_timer()
+    start_time = time.perf_counter()
     val_dict = test(val_loader)
+    end_time = time.perf_counter()
+    latency = end_time - start_time
     print(val_dict)
     val_curve.append(val_dict[eval_metric])
     if (val_dict[eval_metric] > max_val_score):
         max_val_score = val_dict[eval_metric]
         best_test_idx = epoch - 1
-    print("Validation takes--- %s seconds ---" % (timeit.default_timer() - start_time))
+    print("Validation takes--- %s seconds ---" % (latency))
 
-    start_time = timeit.default_timer()
+    u.__exit__()
+    print ("peak GPU usage is", u.gpu_gb)
+
+    quit()
+
+    start_time = time.perf_counter()
     test_dict = test(test_loader)
+    end_time = time.perf_counter()
     print(test_dict)
     test_curve.append(test_dict[eval_metric])
-    print("Test takes--- %s seconds ---" % (timeit.default_timer() - start_time))
+    print("Test takes--- %s seconds ---" % (latency))
     print("------------------------------------")
     dataset.reset_label_time()
 
