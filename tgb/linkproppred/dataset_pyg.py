@@ -1,5 +1,5 @@
 import torch
-from typing import Optional, Optional, Callable
+from typing import Optional, Optional, Callable, Union
 
 from torch_geometric.data import Dataset, TemporalData
 from tgb.linkproppred.dataset import LinkPropPredDataset
@@ -14,6 +14,7 @@ class PyGLinkPropPredDataset(Dataset):
         transform: Optional[Callable] = None,
         pre_transform: Optional[Callable] = None,
         download: Optional[bool] = True,
+        size: Optional[Union[float, int]] = 1.0,
     ):
         r"""
         PyG wrapper for the LinkPropPredDataset
@@ -25,10 +26,11 @@ class PyGLinkPropPredDataset(Dataset):
             transform (callable, optional): A function/transform that takes in an, not used in this case
             pre_transform (callable, optional): A function/transform that takes in, not used in this case
             download (optional, bool): download or not (default True)
+            size (optional, float or int): percentage or number of edges to load (default 1.0)
         """
         self.name = name
         self.root = root
-        self.dataset = LinkPropPredDataset(name=name, root=root, download=download)
+        self.dataset = LinkPropPredDataset(name=name, root=root, download=download, size=size)
         self._train_mask = torch.from_numpy(self.dataset.train_mask)
         self._val_mask = torch.from_numpy(self.dataset.val_mask)
         self._test_mask = torch.from_numpy(self.dataset.test_mask)

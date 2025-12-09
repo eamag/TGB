@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, Union
 import os
 import os.path as osp
 import numpy as np
@@ -33,7 +33,8 @@ class NodePropPredDataset(object):
         root: str = "datasets",
         meta_dict: Optional[dict] = None,
         preprocess: Optional[bool] = True,
-        download: Optional[bool] = True, 
+        download: Optional[bool] = True,
+        size: Optional[Union[float, int]] = 1.0,
     ) -> None:
         r"""Dataset class for the node property prediction task. Stores meta information about each dataset such as evaluation metrics etc.
         also automatically pre-processes the dataset.
@@ -62,7 +63,9 @@ class NodePropPredDataset(object):
             self.metric = DATA_EVAL_METRIC_DICT[self.name]
         else:
             self.metric = None
-            raise ValueError(f"Dataset {self.name} default evaluation metric not found, it is not supported yet.")
+            raise ValueError(
+                f"Dataset {self.name} default evaluation metric not found, it is not supported yet."
+            )
 
         root = PROJ_DIR + root
 
@@ -75,9 +78,11 @@ class NodePropPredDataset(object):
         self.meta_dict = meta_dict
         if "fname" not in self.meta_dict:
             self.meta_dict["fname"] = self.root + "/" + self.name + "_edgelist.csv"
-            self.meta_dict["nodefile"] = self.root + "/" + self.name + "_node_labels.csv"
+            self.meta_dict["nodefile"] = (
+                self.root + "/" + self.name + "_node_labels.csv"
+            )
 
-         #! version check
+        #! version check
         self.version_passed = True
         self._version_check()
 
@@ -96,8 +101,12 @@ class NodePropPredDataset(object):
                 vprint(f"files found in {dir_name}")
             else:
                 dir_name = self.meta_dict["fname"]
-                raise FileNotFoundError(f"Directory not found at {dir_name}, please download the dataset")
-            
+                raise FileNotFoundError(
+                    f"Directory not found at {dir_name}, please download the dataset"
+                )
+
+        self.size = size
+
         # check if the root directory exists, if not create it
         if osp.isdir(self.root):
             vprint("Dataset directory is ", self.root)
@@ -114,18 +123,29 @@ class NodePropPredDataset(object):
         updates the file names based on the current version number
         prompt the user to download the new version via self.version_passed variable
         """
-        if (self.name in DATA_VERSION_DICT):
+        if self.name in DATA_VERSION_DICT:
             version = DATA_VERSION_DICT[self.name]
         else:
             raise ValueError(f"Dataset {self.name} version number not found.")
-        
-        if (version > 1):
-            #* check if current version is outdated
-            self.meta_dict["fname"] = self.root + "/" + self.name + "_edgelist_v" + str(int(version)) + ".csv"
-            self.meta_dict["nodefile"] = self.root + "/" + self.name + "_node_labels_v" + str(int(version)) + ".csv"
-            
-            if (not osp.exists(self.meta_dict["fname"])):
-                vprint(f"Dataset {self.name} version {int(version)} not found, Please download the latest version of the dataset.")
+
+        if version > 1:
+            # * check if current version is outdated
+            self.meta_dict["fname"] = (
+                self.root + "/" + self.name + "_edgelist_v" + str(int(version)) + ".csv"
+            )
+            self.meta_dict["nodefile"] = (
+                self.root
+                + "/"
+                + self.name
+                + "_node_labels_v"
+                + str(int(version))
+                + ".csv"
+            )
+
+            if not osp.exists(self.meta_dict["fname"]):
+                vprint(
+                    f"Dataset {self.name} version {int(version)} not found, Please download the latest version of the dataset."
+                )
                 self.version_passed = False
                 return None
 
@@ -151,7 +171,9 @@ class NodePropPredDataset(object):
             vprint(f"Dataset title: {self.name}")
 
             if self.url is None:
-                raise ValueError(f"Dataset {self.name} url not found, download not supported yet.")
+                raise ValueError(
+                    f"Dataset {self.name} url not found, download not supported yet."
+                )
             else:
                 r = requests.get(self.url, stream=True)
                 if osp.isdir(self.root):
@@ -173,7 +195,6 @@ class NodePropPredDataset(object):
                 with zipfile.ZipFile(path_download, "r") as zip_ref:
                     zip_ref.extractall(self.root)
                 vprint(f"{BColors.OKGREEN}Download completed {BColors.ENDC}")
-          
 
     def generate_processed_files(
         self,
@@ -189,15 +210,31 @@ class NodePropPredDataset(object):
         OUT_LABEL_DF = self.root + "/" + "ml_{}_label.pkl".format(self.name)
         OUT_EDGE_FEAT = self.root + "/" + "ml_{}.pkl".format(self.name + "_edge")
 
+        if self.size != 1.0:
+            OUT_DF = self.root + "/" + "ml_{}_{}.pkl".format(self.name, self.size)
+            OUT_NODE_DF = (
+                self.root + "/" + "ml_{}_{}_node.pkl".format(self.name, self.size)
+            )
+            OUT_LABEL_DF = (
+                self.root + "/" + "ml_{}_{}_label.pkl".format(self.name, self.size)
+            )
+            OUT_EDGE_FEAT = (
+                self.root + "/" + "ml_{}_{}.pkl".format(self.name + "_edge", self.size)
+            )
+
         # * logic for large datasets, as node label file is too big to store on disc
         if self.name == "tgbn-reddit" or self.name == "tgbn-token":
-            if osp.exists(OUT_DF) and osp.exists(OUT_NODE_DF) and osp.exists(OUT_EDGE_FEAT):
+            if (
+                osp.exists(OUT_DF)
+                and osp.exists(OUT_NODE_DF)
+                and osp.exists(OUT_EDGE_FEAT)
+            ):
                 df = pd.read_pickle(OUT_DF)
                 edge_feat = load_pkl(OUT_EDGE_FEAT)
-                if (self.name == "tgbn-token"):
+                if self.name == "tgbn-token":
                     #! taking log normalization for numerical stability
-                    vprint ("applying log normalization for weights in tgbn-token")
-                    edge_feat[:,0] = np.log(edge_feat[:,0])
+                    vprint("applying log normalization for weights in tgbn-token")
+                    edge_feat[:, 0] = np.log(edge_feat[:, 0])
                 node_ids = load_pkl(OUT_NODE_DF)
                 labels_dict = load_pkl(OUT_LABEL_DF)
                 node_label_dict = load_label_dict(
@@ -207,7 +244,9 @@ class NodePropPredDataset(object):
 
         # * load the preprocessed file if possible
         if osp.exists(OUT_DF) and osp.exists(OUT_NODE_DF) and osp.exists(OUT_EDGE_FEAT):
-            vprint(f"loading processed file from {OUT_DF}, edge features from {OUT_EDGE_FEAT}, node info from {OUT_NODE_DF}.")
+            vprint(
+                f"loading processed file from {OUT_DF}, edge features from {OUT_EDGE_FEAT}, node info from {OUT_NODE_DF}."
+            )
             df = pd.read_pickle(OUT_DF)
             node_label_dict = load_pkl(OUT_NODE_DF)
             edge_feat = load_pkl(OUT_EDGE_FEAT)
@@ -215,11 +254,15 @@ class NodePropPredDataset(object):
             vprint("file not processed, generating processed file")
             if self.name == "tgbn-reddit":
                 df, edge_feat, node_ids, labels_dict = load_edgelist_sr(
-                    self.meta_dict["fname"], label_size=self._num_classes
+                    self.meta_dict["fname"],
+                    label_size=self._num_classes,
+                    size=self.size,
                 )
             elif self.name == "tgbn-token":
                 df, edge_feat, node_ids, labels_dict = load_edgelist_token(
-                    self.meta_dict["fname"], label_size=self._num_classes
+                    self.meta_dict["fname"],
+                    label_size=self._num_classes,
+                    size=self.size,
                 )
             elif self.name == "tgbn-genre":
                 df, edge_feat, node_ids, labels_dict = load_edgelist_datetime(
@@ -249,7 +292,7 @@ class NodePropPredDataset(object):
             else:
                 save_pkl(node_ids, OUT_NODE_DF)
                 save_pkl(labels_dict, OUT_LABEL_DF)
-            
+
             vprint("file processed and saved")
         return df, node_label_dict, edge_feat
 
@@ -269,8 +312,16 @@ class NodePropPredDataset(object):
         timestamps = np.array(df["ts"])
         edge_idxs = np.array(df["idx"])
         edge_label = np.ones(sources.shape[0])
-        #self._edge_feat = np.array(df["w"])
+        # self._edge_feat = np.array(df["w"])
         self._edge_feat = edge_feat
+
+        # update num_classes based on the actual number of classes in the dataset
+        if node_label_dict:
+            first_ts = next(iter(node_label_dict))
+            if node_label_dict[first_ts]:
+                first_node = next(iter(node_label_dict[first_ts]))
+                self._num_classes = node_label_dict[first_ts][first_node].shape[0]
+                vprint(f"Number of classes updated to {self._num_classes}")
 
         full_data = {
             "sources": sources,
@@ -371,7 +422,7 @@ class NodePropPredDataset(object):
         Returns:
             ts: int, the timestamp of the node labels
         """
-        if (self.label_ts_idx >= self.label_ts.shape[0]):
+        if self.label_ts_idx >= self.label_ts.shape[0]:
             return self.label_ts[-1]
         else:
             return self.label_ts[self.label_ts_idx]
@@ -413,7 +464,7 @@ class NodePropPredDataset(object):
             edge_feat: np.ndarray, [E, feat_dim] or None if there is no edge feature
         """
         return self._edge_feat
-    
+
     @property
     def node_label_dict(self) -> Dict[int, Dict[int, Any]]:
         r"""
@@ -475,7 +526,7 @@ class NodePropPredDataset(object):
 
 def main():
     # download files
-    name = "tgbn-trade" 
+    name = "tgbn-trade"
     dataset = NodePropPredDataset(name=name, root="datasets", preprocess=True)
 
     dataset.node_feat

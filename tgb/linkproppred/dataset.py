@@ -1,6 +1,6 @@
 import sys
 
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, Union
 import os
 import os.path as osp
 import numpy as np
@@ -46,7 +46,8 @@ class LinkPropPredDataset(object):
         root: str = "datasets",
         meta_dict: Optional[dict] = None,
         preprocess: Optional[bool] = True,
-        download: Optional[bool] = True, 
+        download: Optional[bool] = True,
+        size: Optional[Union[float, int]] = 1.0,
     ):
         r"""Dataset class for link prediction dataset. Stores meta information about each dataset such as evaluation metrics etc.
         also automatically pre-processes the dataset.
@@ -102,6 +103,8 @@ class LinkPropPredDataset(object):
         #! version check
         self.version_passed = True
         self._version_check()
+
+        self.size = size
 
         # initialize
         self._node_feat = None
@@ -272,6 +275,15 @@ class LinkPropPredDataset(object):
         if self.meta_dict["nodeTypeFile"] is not None:
             OUT_NODE_TYPE = self.root + "/" + "ml_{}.pkl".format(self.name + "_nodeType")
 
+        if self.size != 1.0:
+            OUT_DF = self.root + "/" + "ml_{}_{}.pkl".format(self.name, self.size)
+            OUT_EDGE_FEAT = self.root + "/" + "ml_{}_{}.pkl".format(self.name + "_edge", self.size)
+            OUT_NODE_ID = self.root + "/" + "ml_{}_{}.pkl".format(self.name + "_nodeid", self.size)
+            if self.meta_dict["nodefile"] is not None:
+                OUT_NODE_FEAT = self.root + "/" + "ml_{}_{}.pkl".format(self.name + "_node", self.size)
+            if self.meta_dict["nodeTypeFile"] is not None:
+                OUT_NODE_TYPE = self.root + "/" + "ml_{}_{}.pkl".format(self.name + "_nodeType", self.size)
+
         if osp.exists(OUT_DF) and self.version_passed is True:
             vprint(f"loading processed file from {OUT_DF}.")
             df = pd.read_pickle(OUT_DF)
@@ -288,45 +300,45 @@ class LinkPropPredDataset(object):
         else:
             vprint("file not processed, generating processed file")
             if self.name == "tgbl-flight":
-                df, edge_feat, node_ids = csv_to_pd_data(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_pd_data(self.meta_dict["fname"], size=self.size)
             elif self.name == "tgbl-coin":
-                df, edge_feat, node_ids = csv_to_pd_data_sc(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_pd_data_sc(self.meta_dict["fname"], size=self.size)
             elif self.name == "tgbl-comment":
-                df, edge_feat, node_ids = csv_to_pd_data_rc(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_pd_data_rc(self.meta_dict["fname"], size=self.size)
             elif self.name == "tgbl-review":
-                df, edge_feat, node_ids = csv_to_pd_data_sc(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_pd_data_sc(self.meta_dict["fname"], size=self.size)
             elif self.name == "tgbl-wiki":
-                df, edge_feat, node_ids = load_edgelist_wiki(self.meta_dict["fname"])
+                df, edge_feat, node_ids = load_edgelist_wiki(self.meta_dict["fname"], size=self.size)
             elif self.name == "tgbl-subreddit":
-                df, edge_feat, node_ids = load_edgelist_wiki(self.meta_dict["fname"])
+                df, edge_feat, node_ids = load_edgelist_wiki(self.meta_dict["fname"], size=self.size)
             elif self.name == "tgbl-uci":
-                df, edge_feat, node_ids = load_edgelist_wiki(self.meta_dict["fname"])
+                df, edge_feat, node_ids = load_edgelist_wiki(self.meta_dict["fname"], size=self.size)
             elif self.name == "tgbl-enron":
-                df, edge_feat, node_ids = load_edgelist_wiki(self.meta_dict["fname"])
+                df, edge_feat, node_ids = load_edgelist_wiki(self.meta_dict["fname"], size=self.size)
             elif self.name == "tgbl-lastfm":
-                df, edge_feat, node_ids = load_edgelist_wiki(self.meta_dict["fname"])
+                df, edge_feat, node_ids = load_edgelist_wiki(self.meta_dict["fname"], size=self.size)
             elif self.name == "tkgl-polecat":
-                df, edge_feat, node_ids = csv_to_tkg_data(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_tkg_data(self.meta_dict["fname"], size=self.size)
             elif self.name == "tkgl-icews":
-                df, edge_feat, node_ids = csv_to_tkg_data(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_tkg_data(self.meta_dict["fname"], size=self.size)
             elif self.name == "tkgl-yago":
-                df, edge_feat, node_ids = csv_to_tkg_data(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_tkg_data(self.meta_dict["fname"], size=self.size)
             elif self.name == "tkgl-wikidata":
-                df, edge_feat, node_ids = csv_to_wikidata(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_wikidata(self.meta_dict["fname"], size=self.size)
                 save_pkl(node_ids, OUT_NODE_ID)
                 self._node_id = node_ids
             elif self.name == "tkgl-smallpedia":
-                df, edge_feat, node_ids = csv_to_wikidata(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_wikidata(self.meta_dict["fname"], size=self.size)
                 save_pkl(node_ids, OUT_NODE_ID)
                 self._node_id = node_ids
             elif self.name == "thgl-myket":
-                df, edge_feat, node_ids = csv_to_thg_data(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_thg_data(self.meta_dict["fname"], size=self.size)
             elif self.name == "thgl-github":
-                df, edge_feat, node_ids = csv_to_thg_data(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_thg_data(self.meta_dict["fname"], size=self.size)
             elif self.name == "thgl-forum":
-                df, edge_feat, node_ids = csv_to_forum_data(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_forum_data(self.meta_dict["fname"], size=self.size)
             elif self.name == "thgl-software":
-                df, edge_feat, node_ids = csv_to_thg_data(self.meta_dict["fname"])
+                df, edge_feat, node_ids = csv_to_thg_data(self.meta_dict["fname"], size=self.size)
             else:
                 raise ValueError(f"Dataset {self.name} not found.")
 

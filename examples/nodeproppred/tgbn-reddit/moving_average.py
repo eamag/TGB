@@ -15,7 +15,7 @@ from tgb.nodeproppred.evaluate import Evaluator
 window = 7
 device = "cpu"
 name = "tgbn-reddit"
-dataset = PyGNodePropPredDataset(name=name, root="datasets")
+dataset = PyGNodePropPredDataset(name=name, root="datasets", size=0.1)
 num_classes = dataset.num_classes
 data = dataset.get_TemporalData()
 data = data.to(device)
@@ -114,6 +114,7 @@ start_time = timeit.default_timer()
 test_dict = test_n_upate(test_loader)
 print(test_dict)
 print(
-    "Persistant forecast on Test takes--- %s seconds ---" % (timeit.default_timer() - start_time)
+    "Persistant forecast on Test takes--- %s seconds ---"
+    % (timeit.default_timer() - start_time)
 )
 dataset.reset_label_time()

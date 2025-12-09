@@ -48,6 +48,7 @@ functions for thgl-forum dataset
 """
 def csv_to_forum_data(
     fname: str,
+    size: Optional[Union[float, int]] = 1.0,
 ) -> pd.DataFrame:
     r"""
     used by thgl-forum dataset
@@ -55,9 +56,14 @@ def csv_to_forum_data(
     input .csv file format should be: timestamp, head, tail, relation type
     Args:
         fname: the path to the raw data
+        size: float or int, percentage or number of lines to load
     """
     feat_size = 2
     num_lines = sum(1 for line in open(fname)) - 1
+    if isinstance(size, float):
+        num_lines = int(num_lines * size)
+    else:
+        num_lines = int(size)
     vprint(f"number of lines counted: {num_lines} in {fname}")
     u_list = np.zeros(num_lines)
     i_list = np.zeros(num_lines)
@@ -82,6 +88,8 @@ def csv_to_forum_data(
                 idx += 1
                 continue
             else:
+                if idx > num_lines:
+                    break
                 #! ts,src,dst,relation_type,num_words,score
                 ts = int(row[0]) #converted to UNIX timestamp already 
                 src = int(row[1])
@@ -129,6 +137,7 @@ functions for thg dataset
 """
 def csv_to_thg_data(
     fname: str,
+    size: Optional[Union[float, int]] = 1.0,
 ) -> pd.DataFrame:
     r"""
     used by thgl-myket dataset
@@ -136,9 +145,14 @@ def csv_to_thg_data(
     input .csv file format should be: timestamp, head, tail, relation type
     Args:
         fname: the path to the raw data
+        size: float or int, percentage or number of lines to load
     """
     feat_size = 1
     num_lines = sum(1 for line in open(fname)) - 1
+    if isinstance(size, float):
+        num_lines = int(num_lines * size)
+    else:
+        num_lines = int(size)
     vprint(f"number of lines counted: {num_lines} in {fname}")
     u_list = np.zeros(num_lines)
     i_list = np.zeros(num_lines)
@@ -200,6 +214,7 @@ functions for tkgl-wikidata dataset
 """
 def csv_to_wikidata(
     fname: str,
+    size: Optional[Union[float, int]] = 1.0,
 ) -> pd.DataFrame:
     r"""
     used by tkgl-wikidata and tkgl-smallpedia
@@ -207,9 +222,14 @@ def csv_to_wikidata(
     input .csv file format should be: timestamp, head, tail, relation type
     Args:
         fname: the path to the raw data
+        size: float or int, percentage or number of lines to load
     """
     feat_size = 1
     num_lines = sum(1 for line in open(fname)) - 1
+    if isinstance(size, float):
+        num_lines = int(num_lines * size)
+    else:
+        num_lines = int(size)
     vprint(f"number of lines counted: {num_lines} in {fname}")
     u_list = np.zeros(num_lines)
     i_list = np.zeros(num_lines)
@@ -233,6 +253,8 @@ def csv_to_wikidata(
                 idx += 1
                 continue
             else:
+                if idx > num_lines:
+                    break
                 ts = int(row[0]) #converted to year already
                 src = row[1]
                 dst = row[2]
@@ -332,6 +354,7 @@ functions for tkgl-polecat, tkgl-icews dataset
 """
 def csv_to_tkg_data(
     fname: str,
+    size: Optional[Union[float, int]] = 1.0,
 ) -> pd.DataFrame:
     r"""
     used by tkgl-polecat
@@ -339,9 +362,14 @@ def csv_to_tkg_data(
     input .csv file format should be: timestamp, head, tail, relation type
     Args:
         fname: the path to the raw data
+        size: float or int, percentage or number of lines to load
     """
     feat_size = 1
     num_lines = sum(1 for line in open(fname)) - 1
+    if isinstance(size, float):
+        num_lines = int(num_lines * size)
+    else:
+        num_lines = int(size)
     vprint(f"number of lines counted: {num_lines} in {fname}")
     u_list = np.zeros(num_lines)
     i_list = np.zeros(num_lines)
@@ -405,7 +433,10 @@ def csv_to_tkg_data(
 functions for wikipedia dataset
 ---------------------------------------
 """
-def load_edgelist_wiki(fname: str) -> pd.DataFrame:
+def load_edgelist_wiki(
+    fname: str,
+    size: Optional[Union[float, int]] = 1.0,
+) -> pd.DataFrame:
     """
     loading wikipedia dataset into pandas dataframe
     similar processing to
@@ -413,10 +444,16 @@ def load_edgelist_wiki(fname: str) -> pd.DataFrame:
 
     Parameters:
         fname: str, name of the input file
+        size: float or int, percentage or number of lines to load
     Returns:
         df: a pandas dataframe containing the edgelist data
     """
     df = pd.read_csv(fname, skiprows=1, header=None)
+    if isinstance(size, float):
+        num_lines = int(df.shape[0] * size)
+    else:
+        num_lines = int(size)
+    df = df.iloc[:num_lines]
     src = df.iloc[:, 0].values
     dst = df.iloc[:, 1].values
     dst += int(src.max()) + 1
@@ -540,6 +577,7 @@ functions for tgbn-token
 def load_edgelist_token(
     fname: str,
     label_size: int = 1001,
+    size: Optional[Union[float, int]] = 1.0,
 ) -> pd.DataFrame:
     """
     load the edgelist into pandas dataframe
@@ -547,11 +585,16 @@ def load_edgelist_token(
     Parameters:
         fname: str, name of the input file
         label_size: int, number of genres
+        size: float or int, percentage or number of lines to load
     Returns:
         df: a pandas dataframe containing the edgelist data
     """
     feat_size = 2
     num_lines = sum(1 for line in open(fname)) - 1
+    if isinstance(size, float):
+        num_lines = int(num_lines * size)
+    else:
+        num_lines = int(size)
     vprint("there are ", num_lines, " lines in the raw data")
     u_list = np.zeros(num_lines)
     i_list = np.zeros(num_lines)
@@ -574,6 +617,8 @@ def load_edgelist_token(
             if idx == 0:
                 idx += 1
             else:
+                if idx > num_lines:
+                    break
                 ts = row[0]
                 src = row[1]
                 token = row[2]
@@ -639,6 +684,7 @@ functions for subreddits dataset
 def load_edgelist_sr(
     fname: str,
     label_size: int = 2221,
+    size: Optional[Union[float, int]] = 1.0,
 ) -> pd.DataFrame:
     """
     load the edgelist into pandas dataframe
@@ -646,11 +692,16 @@ def load_edgelist_sr(
     Parameters:
         fname: str, name of the input file
         label_size: int, number of genres
+        size: float or int, percentage or number of lines to load
     Returns:
         df: a pandas dataframe containing the edgelist data
     """
     feat_size = 1 #2
     num_lines = sum(1 for line in open(fname)) - 1
+    if isinstance(size, float):
+        num_lines = int(num_lines * size)
+    else:
+        num_lines = int(size)
     vprint("there are ", num_lines, " lines in the raw data")
     u_list = np.zeros(num_lines)
     i_list = np.zeros(num_lines)
@@ -673,6 +724,8 @@ def load_edgelist_sr(
             if idx == 0:
                 idx += 1
             else:
+                if idx > num_lines:
+                    break
                 ts = row[0]
                 src = row[1]
                 subreddit = row[2]
@@ -793,6 +846,8 @@ def load_label_dict(fname: str, node_ids: dict, rd_dict: dict) -> dict:
             if idx == 0:
                 idx += 1
             else:
+                if row[1] not in node_ids or row[2] not in rd_dict:
+                    continue
                 u = node_ids[row[1]]
                 ts = int(row[0])
                 v = int(rd_dict[row[2]])
@@ -816,6 +871,7 @@ functions for redditcomments
 
 def csv_to_pd_data_rc(
     fname: str,
+    size: Optional[Union[float, int]] = 1.0,
 ) -> pd.DataFrame:
     r"""
     currently used by redditcomments dataset
@@ -826,6 +882,10 @@ def csv_to_pd_data_rc(
     """
     feat_size = 2  # 1 for subreddit, 1 for num words
     num_lines = sum(1 for line in open(fname)) - 1
+    if isinstance(size, float):
+        num_lines = int(num_lines * size)
+    else:
+        num_lines = int(size)
     vprint("there are ", num_lines, " lines in the raw data")
     u_list = np.zeros(num_lines)
     i_list = np.zeros(num_lines)
@@ -895,6 +955,7 @@ functions for stablecoin
 """
 def csv_to_pd_data_sc(
     fname: str,
+    size: Optional[Union[float, int]] = 1.0,
 ) -> pd.DataFrame:
     r"""
     currently used by stablecoin dataset
@@ -1005,6 +1066,7 @@ def convert_str2int(
 
 def csv_to_pd_data(
     fname: str,
+    size: Optional[Union[float, int]] = 1.0,
 ) -> pd.DataFrame:
     r"""
     currently used by tgbl-flight dataset
@@ -1015,6 +1077,10 @@ def csv_to_pd_data(
     """
     feat_size = 16
     num_lines = sum(1 for line in open(fname)) - 1
+    if isinstance(size, float):
+        num_lines = int(num_lines * size)
+    else:
+        num_lines = int(size)
     vprint(f"number of lines counted: {num_lines} in {fname}")
     u_list = np.zeros(num_lines)
     i_list = np.zeros(num_lines)
@@ -1036,6 +1102,8 @@ def csv_to_pd_data(
                 idx += 1
                 continue
             else:
+                if idx > num_lines:
+                    break
                 ts = row[0]
                 if ts_format is None:
                     if (ts.isdigit()):

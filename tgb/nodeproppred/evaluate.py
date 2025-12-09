@@ -66,7 +66,9 @@ class Evaluator(object):
                     raise RuntimeError("Shape of y_true and y_pred must be the same!")
 
             else:
-                raise ValueError(f"Unsupported eval metric: {eval_metric}, not found in {self.valid_metric_list}")
+                raise ValueError(
+                    f"Unsupported eval metric: {eval_metric}, not found in {self.valid_metric_list}"
+                )
 
         self.eval_metric = input_dict["eval_metric"]
 
@@ -134,10 +136,6 @@ def main():
     evaluator = Evaluator(name=name)
     print(evaluator.expected_input_format)
     print(evaluator.expected_output_format)
-    input_dict = {"y_true": y_true, "y_pred": y_pred, "eval_metric": ["mse"]}
-
-    result_dict = evaluator.eval(input_dict)
-    print(result_dict)
 
 
 if __name__ == "__main__":
